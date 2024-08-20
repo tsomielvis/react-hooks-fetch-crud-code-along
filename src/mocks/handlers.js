@@ -1,39 +1,43 @@
 import { rest } from "msw";
-import { data } from "./data";
 
-let items = [...data];
-let id = items[items.length - 1].id;
-
-export function resetData() {
-  items = [...data];
-  id = items[items.length - 1].id;
-}
+let items = [
+  { id: 1, name: "Yogurt", category: "Dairy", isInCart: false },
+  { id: 2, name: "Pomegranate", category: "Fruit", isInCart: false },
+  { id: 3, name: "Lettuce", category: "Vegetable", isInCart: false },
+];
 
 export const handlers = [
-  rest.get("http://localhost:4000/items", (req, res, ctx) => {
+  rest.get("/api/items", (req, res, ctx) => {
     return res(ctx.json(items));
   }),
-  rest.post("http://localhost:4000/items", (req, res, ctx) => {
-    id++;
-    const item = { id, ...req.body };
-    items.push(item);
-    return res(ctx.json(item));
+
+  rest.post("/api/items", (req, res, ctx) => {
+    const newItem = req.body;
+    newItem.id = items.length + 1;
+    items.push(newItem);
+    return res(ctx.json(newItem));
   }),
-  rest.delete("http://localhost:4000/items/:id", (req, res, ctx) => {
+
+  rest.put("/api/items/:id", (req, res, ctx) => {
     const { id } = req.params;
-    if (isNaN(parseInt(id))) {
-      return res(ctx.status(404), ctx.json({ message: "Invalid ID" }));
-    }
-    items = items.filter((q) => q.id !== parseInt(id));
-    return res(ctx.json({}));
+    const updatedItem = req.body;
+    items = items.map((item) =>
+      item.id === parseInt(id) ? updatedItem : item
+    );
+    return res(ctx.json(updatedItem));
   }),
-  rest.patch("http://localhost:4000/items/:id", (req, res, ctx) => {
+
+  rest.delete("/api/items/:id", (req, res, ctx) => {
     const { id } = req.params;
-    if (isNaN(parseInt(id))) {
-      return res(ctx.status(404), ctx.json({ message: "Invalid ID" }));
-    }
-    const itemIndex = items.findIndex((item) => item.id === parseInt(id));
-    items[itemIndex] = { ...items[itemIndex], ...req.body };
-    return res(ctx.json(items[itemIndex]));
+    items = items.filter((item) => item.id !== parseInt(id));
+    return res(ctx.status(204));
   }),
 ];
+
+export const resetData = () => {
+  items = [
+    { id: 1, name: "Yogurt", category: "Dairy", isInCart: false },
+    { id: 2, name: "Pomegranate", category: "Fruit", isInCart: false },
+    { id: 3, name: "Lettuce", category: "Vegetable", isInCart: false },
+  ];
+};
